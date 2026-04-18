@@ -5,6 +5,8 @@ local Util = require("sidekick.util")
 
 local M = {}
 
+M._counters = {} ---@type table<string, integer>
+
 ---@class sidekick.cli.State
 ---@field tool sidekick.cli.Tool
 ---@field attached? boolean
@@ -198,6 +200,36 @@ function M.attach(state, opts)
     Util.info("Attached to `" .. state.tool.name .. "`")
   end
   return state, attached
+end
+
+---@param tool_name string
+function M.unique_id(tool_name)
+  local sid = Session.sid({ tool = tool_name })
+  M._counters[sid] = (M._counters[sid] or 0) + 1
+  return ("%s #%d"):format(sid, M._counters[sid])
+end
+
+---@param opts? { filter?: sidekick.cli.Filter, focus?: boolean }
+function M.create(opts)
+  opts = opts or {}
+  local name = opts.filter and opts.filter.name
+  if not name then
+    Util.warn("`new = true` requires a tool name (e.g. `name = \"claude\"`)")
+    return
+  end
+  Session.setup()
+  local session = Session.new({
+    tool = name,
+    id = M.unique_id(name),
+  })
+  session = Session.attach(session)
+  local state = M.get_state(session)
+  if state.terminal then
+    state.terminal:show()
+    if opts.focus ~= false and state.terminal:is_running() then
+      state.terminal:focus()
+    end
+  end
 end
 
 ---@param state sidekick.cli.State

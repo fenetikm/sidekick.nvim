@@ -27,6 +27,7 @@ local M = {}
 ---@field focus? boolean
 ---@field filter? sidekick.cli.Filter
 ---@field all? boolean
+---@field new? boolean
 
 ---@class sidekick.cli.Hide
 ---@field name? string
@@ -99,6 +100,10 @@ end
 ---@overload fun(name: string)
 function M.toggle(opts)
   opts = filter_opts(opts)
+  if opts.new then
+    State.create({ filter = opts.filter, focus = opts.focus })
+    return
+  end
   State.with(function(state, attached)
     if not state.terminal then
       return

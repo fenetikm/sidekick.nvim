@@ -39,7 +39,7 @@ function M:terminal()
     )) --[[@as string]]
   end
 
-  local session = self.sid
+  local session = self.id
 
   local layout_file = Config.state("zellij-layout-" .. session .. ".kdl")
   vim.fn.writefile(vim.split(layout, "\n"), layout_file)
