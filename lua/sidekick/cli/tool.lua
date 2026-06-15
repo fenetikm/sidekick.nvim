@@ -42,6 +42,18 @@ function M:is_proc(proc)
       return re:match_str(p.cmd) ~= nil
     end
     self.config.is_proc = is_proc
+  elseif type(is_proc) == "table" then
+    local patterns = is_proc
+    local res = vim.tbl_map(vim.regex, patterns)
+    is_proc = function(_, p)
+      for _, re in ipairs(res) do
+        if re:match_str(p.cmd) ~= nil then
+          return true
+        end
+      end
+      return false
+    end
+    self.config.is_proc = is_proc
   end
   return type(is_proc) == "function" and is_proc(self, proc) or false
 end
