@@ -578,7 +578,7 @@ require("sidekick.cli").show(opts)
 
 
 ```lua
----@param opts? sidekick.cli.Show
+---@param opts? sidekick.cli.Toggle
 ---@overload fun(name: string)
 require("sidekick.cli").toggle(opts)
 ```

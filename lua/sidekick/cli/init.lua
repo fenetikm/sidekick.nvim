@@ -28,6 +28,9 @@ local M = {}
 ---@field filter? sidekick.cli.Filter
 ---@field all? boolean
 
+---@class sidekick.cli.Toggle: sidekick.cli.Show
+---@field strategy? "auto"
+
 ---@class sidekick.cli.Hide
 ---@field name? string
 ---@field filter? sidekick.cli.Filter
@@ -95,11 +98,12 @@ function M.show(opts)
   })
 end
 
----@param opts? sidekick.cli.Show
+---@param opts? sidekick.cli.Toggle
 ---@overload fun(name: string)
 function M.toggle(opts)
   opts = filter_opts(opts)
-  State.with(function(state, attached)
+
+  local on_state = function(state, attached)
     if not state.terminal then
       return
     end
@@ -109,7 +113,28 @@ function M.toggle(opts)
     if state.terminal:is_open() and opts.focus ~= false then
       state.terminal:focus()
     end
-  end, {
+  end
+
+  if opts.strategy == "auto" then
+    local attached = State.get(Util.merge(opts.filter, { attached = true }))
+    if #attached == 0 and vim.env.TMUX then
+      local Session = require("sidekick.cli.session")
+      Session.setup()
+      local tmux = Session.backends.tmux
+      local sessions = tmux and tmux.current_window_sessions and tmux.current_window_sessions() or {}
+      if sessions[1] then
+        local session = Session.new(vim.tbl_extend("force", sessions[1], {
+          backend = "tmux",
+          started = true,
+        }))
+        local state = State.get_state(session)
+        local ret, did_attach = State.attach(state, { focus = opts.focus })
+        return on_state(ret, did_attach)
+      end
+    end
+  end
+
+  State.with(on_state, {
     attach = true,
     filter = opts.filter,
   })

@@ -121,11 +121,11 @@ function M.clients()
   return ret
 end
 
-function M.sessions()
-  local panes = M.panes()
+---@param panes sidekick.tmux.Pane[]
+---@return sidekick.cli.session.State[]
+function M.sessions_for_panes(panes)
   local ret = {} ---@type sidekick.cli.session.State[]
   local tools = Config.tools()
-
   local clients = M.clients()
 
   local Procs = require("sidekick.cli.procs")
@@ -152,6 +152,17 @@ function M.sessions()
   end
 
   return ret
+end
+
+function M.sessions()
+  return M.sessions_for_panes(M.panes())
+end
+
+function M.current_window_sessions()
+  return M.sessions_for_panes(M.panes({
+    cmd = { "tmux", "list-panes", "-F", PANE_FORMAT },
+    notify = false,
+  }))
 end
 
 function M:pane_id()
