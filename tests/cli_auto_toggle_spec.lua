@@ -86,6 +86,38 @@ describe("cli auto toggle", function()
     end)
   end)
 
+  describe("tmux focus", function()
+    it("selects the tmux pane", function()
+      local exec_calls = {}
+      Util.exec = function(cmd)
+        table.insert(exec_calls, cmd)
+        return {}
+      end
+
+      Tmux.focus({
+        pane_id = function()
+          return "%10"
+        end,
+      })
+
+      assert.are.same({ { "tmux", "select-pane", "-t", "%10" } }, exec_calls)
+    end)
+
+    it("does nothing when there is no pane", function()
+      local exec_calls = {}
+      Util.exec = function(cmd)
+        table.insert(exec_calls, cmd)
+        return {}
+      end
+
+      Tmux.focus({
+        pane_id = function() end,
+      })
+
+      assert.are.same({}, exec_calls)
+    end)
+  end)
+
   describe("toggle strategy auto", function()
     local Cli
     local Session

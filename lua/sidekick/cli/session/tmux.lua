@@ -197,6 +197,14 @@ function M:submit()
   Util.exec({ "tmux", "send-keys", "-t", self.tmux_pane_id, "Enter" })
 end
 
+---Focus the tmux pane by selecting it as active.
+function M:focus()
+  local pane_id = self:pane_id()
+  if pane_id then
+    Util.exec({ "tmux", "select-pane", "-t", pane_id })
+  end
+end
+
 function M:dump()
   local pane_id = self:pane_id()
   if not pane_id then

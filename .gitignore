@@ -4,6 +4,7 @@
 /build
 /debug
 /doc/tags
+/.worktrees
 foo.*
 node_modules
 tt.*
