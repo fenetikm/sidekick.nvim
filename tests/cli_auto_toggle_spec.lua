@@ -128,6 +128,7 @@ describe("cli auto toggle", function()
     local original_state_get
     local original_state_attach
     local original_state_with
+    local original_state_get_state
     local original_tmux_sessions
     local original_tmux_env
 
@@ -141,6 +142,7 @@ describe("cli auto toggle", function()
       original_state_get = State.get
       original_state_attach = State.attach
       original_state_with = State.with
+      original_state_get_state = State.get_state
       original_tmux_sessions = TmuxModule.current_window_sessions
       original_tmux_env = vim.env.TMUX
       Session.backends = { tmux = TmuxModule }
@@ -154,6 +156,7 @@ describe("cli auto toggle", function()
       State.get = original_state_get
       State.attach = original_state_attach
       State.with = original_state_with
+      State.get_state = original_state_get_state
       TmuxModule.current_window_sessions = original_tmux_sessions
       vim.env.TMUX = original_tmux_env
     end)
@@ -210,6 +213,48 @@ describe("cli auto toggle", function()
       Cli.toggle({ strategy = "auto", focus = false })
 
       assert.are.same({ attach = true, filter = {} }, with_opts)
+    end)
+
+    it("starts a new tmux split when auto finds no same-window agent for a named tool", function()
+      local attached = {}
+      local with_calls = {}
+      local tool = {
+        name = "claude",
+        cmd = { "claude" },
+        clone = function(self, opts)
+          return vim.tbl_extend("force", vim.deepcopy(self), opts)
+        end,
+      }
+
+      Config.tools = function()
+        return { claude = tool }
+      end
+      State.get = function(filter)
+        assert.are.same({ attached = true, name = "claude" }, filter)
+        return {}
+      end
+      TmuxModule.current_window_sessions = function()
+        return {}
+      end
+      State.get_state = function(session)
+        return { session = session, tool = session.tool }
+      end
+      State.attach = function(state, opts)
+        table.insert(attached, { state = state, opts = opts })
+        return {}, true
+      end
+      State.with = function()
+        table.insert(with_calls, true)
+      end
+
+      Cli.toggle({ name = "claude", strategy = "auto", focus = true })
+
+      assert.are.same(1, #attached)
+      assert.are.same("tmux", attached[1].state.session.backend)
+      assert.are.same("split", attached[1].state.session.create)
+      assert.are.same("claude", attached[1].state.session.tool.name)
+      assert.are.same({ focus = true }, attached[1].opts)
+      assert.are.same({}, with_calls)
     end)
 
     it("does not call tmux discovery without auto strategy", function()

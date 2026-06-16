@@ -21,7 +21,8 @@ function M:init()
   if self.started then
     self.external = self.sid ~= self.mux_session
   else
-    self.external = vim.env.TMUX and Config.cli.mux.create ~= "terminal"
+    local create = self.create or Config.cli.mux.create
+    self.external = vim.env.TMUX and create ~= "terminal"
     self.mux_session = self.sid
   end
   self.priority = self.external and 10 or 50
@@ -29,6 +30,7 @@ end
 
 ---@return sidekick.cli.terminal.Cmd?
 function M:start()
+  local create = self.create or Config.cli.mux.create
   if not self.external then
     local cmd = { "tmux", "new", "-A", "-s", self.id }
     vim.list_extend(cmd, { "-c", self.cwd })
@@ -36,12 +38,12 @@ function M:start()
     vim.list_extend(cmd, { ";", "set-option", "status", "off" })
     vim.list_extend(cmd, { ";", "set-option", "detach-on-destroy", "on" })
     return { cmd = cmd }
-  elseif Config.cli.mux.create == "window" then
+  elseif create == "window" then
     local cmd = { "tmux", "new-window", "-dP", "-c", self.cwd, "-F", PANE_FORMAT }
     self:add_cmd(cmd)
     self:spawn(cmd)
     Util.info(("Started **%s** in a new tmux window"):format(self.tool.name))
-  elseif Config.cli.mux.create == "split" then
+  elseif create == "split" then
     local cmd = { "tmux", "split-window", "-dP", "-c", self.cwd, "-F", PANE_FORMAT }
     cmd[#cmd + 1] = Config.cli.mux.split.vertical and "-h" or "-v"
     local size = Config.cli.mux.split.size

@@ -122,11 +122,23 @@ function M.toggle(opts)
       Session.setup()
       local tmux = Session.backends.tmux
       local sessions = tmux and tmux.current_window_sessions and tmux.current_window_sessions() or {}
-      if sessions[1] then
-        local session = Session.new(vim.tbl_extend("force", sessions[1], {
+      local session_state = vim.tbl_filter(function(session)
+        return not opts.filter.name or session.tool.name == opts.filter.name
+      end, sessions)[1]
+      if session_state then
+        local session = Session.new(vim.tbl_extend("force", session_state, {
           backend = "tmux",
           started = true,
         }))
+        local state = State.get_state(session)
+        local ret, did_attach = State.attach(state, { focus = opts.focus })
+        return on_state(ret, did_attach)
+      elseif opts.filter.name then
+        local session = Session.new({
+          tool = opts.filter.name,
+          backend = "tmux",
+          create = "split",
+        })
         local state = State.get_state(session)
         local ret, did_attach = State.attach(state, { focus = opts.focus })
         return on_state(ret, did_attach)
