@@ -771,7 +771,7 @@ opts = {
       claude = {
         is_proc = {
           "\\<claude\\>",
-          "sbx run claude%-docker",
+          "sbx run claude-[^ ]*",
         },
       },
     },
