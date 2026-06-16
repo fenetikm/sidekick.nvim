@@ -554,7 +554,8 @@ require("sidekick.cli").select(opts)
 ```
 
 </td></tr>
-<tr><td><code>:Sidekick cli send</code> Send a message or prompt to a CLI</td><td>
+<tr><td><code>:Sidekick cli send</code> Send a message or prompt to a CLI
+Set `submit = true` to submit the CLI after sending the prompt.</td><td>
 
 
 ```lua
@@ -626,6 +627,24 @@ current file, selection, diagnostics, and more.
 - `{this}`: A special context variable. If the current buffer is a file, it resolves to `{position}`. Otherwise, it resolves to the literal string "this" and appends the current `{selection}` to the prompt.
 
 </details>
+
+### Submitting CLI Prompts
+
+By default, `require("sidekick.cli").send()` inserts the rendered message into the
+current CLI session so you can review or edit it before submitting. Pass
+`submit = true` to send the message and immediately submit it to the CLI.
+
+```lua
+-- Insert the current file prompt, then submit it to the active CLI.
+require("sidekick.cli").send({ msg = "Review {file}", submit = true })
+
+-- Same behavior from visual mode with the selected text.
+require("sidekick.cli").send({ msg = "Fix {selection}", submit = true })
+```
+
+This works with terminal, tmux, and tools that provide a native submit backend.
+For tmux sessions, Sidekick pastes the prompt into the pane and then sends
+`Enter` to submit it.
 
 ### Snacks.nvim Picker Integration
 
@@ -730,6 +749,36 @@ Sidekick preconfigures popular AI CLIs. Run `:checkhealth sidekick` to see which
 
 > [!TIP]
 > After installing tools, restart Neovim or run `:Sidekick cli select` to see them available.
+
+### Detecting Wrapped CLI Sessions
+
+When Sidekick runs inside tmux, it can attach to already-running AI CLI sessions by
+matching the visible pane process for each configured tool. Most built-in tools use
+an `is_proc` regex string, but you can also provide a list of regex patterns when a
+tool is started through a wrapper command.
+
+For example, if Claude is running in a tmux pane through `sbx run claude-docker`,
+keep the default `claude` process match and add your wrapper command:
+
+```lua
+opts = {
+  cli = {
+    tools = {
+      claude = {
+        is_proc = {
+          "\\<claude\\>",
+          "sbx run claude%-docker",
+        },
+      },
+    },
+  },
+}
+```
+
+Each string is matched against the process command with `vim.regex()`, and the
+first matching pattern identifies that tmux pane as the tool session. You can still
+use a single regex string or an `is_proc = function(tool, proc) ... end` callback
+for custom detection logic.
 
 ## 🚀 Commands
 

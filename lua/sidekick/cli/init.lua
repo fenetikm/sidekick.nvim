@@ -37,7 +37,7 @@ local M = {}
 ---@field all? boolean
 
 ---@class sidekick.cli.Send: sidekick.cli.Show,sidekick.cli.Message
----@field submit? boolean
+---@field submit? boolean Submit the prompt after sending it to the CLI
 
 --- Keymap options similar to `vim.keymap.set` and `lazy.nvim` mappings
 ---@class sidekick.cli.Keymap: vim.keymap.set.Opts
@@ -191,6 +191,7 @@ function M.render(opts)
 end
 
 --- Send a message or prompt to a CLI
+--- Set `submit = true` to submit the CLI after sending the prompt.
 ---@param opts? sidekick.cli.Send
 ---@overload fun(msg:string)
 function M.send(opts)
